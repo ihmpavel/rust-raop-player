@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build_macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install required tools
+      run: sudo apt install libdbus-1-dev pkg-config libudev-dev libglfw3-dev libglew-dev
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Build Release
+      run: cargo build --verbose --release --target=aarch64-apple-darwin
+    - name: Artifact MacOS
+      uses: actions/upload-artifact@v3
+      with:
+        name: Build MacOS
+        path: ./target/aarch64-apple-darwin/release/control_harts
+        retention-days: 5
