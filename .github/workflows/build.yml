@@ -24,5 +24,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Build MacOS
-        path: ./target/aarch64-apple-darwin/release/control_harts
+        path: ./target
         retention-days: 5
