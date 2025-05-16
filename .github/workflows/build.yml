@@ -11,9 +11,9 @@ jobs:
   build_macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Install required tools
-      run: sudo apt install libdbus-1-dev pkg-config libudev-dev libglfw3-dev libglew-dev
+    - uses: actions/checkout@v4
+    - name: Install required target
+      run: rustup target add aarch64-apple-darwin
     - name: Build
       run: cargo build --verbose
     - name: Run tests
