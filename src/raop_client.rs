@@ -5,10 +5,10 @@ use crate::keepalive_controller::KeepaliveController;
 use crate::meta_data::MetaDataItem;
 use crate::ntp::NtpTime;
 use crate::raop_params::RaopParams;
-use crate::rtp::{RtpHeader, RtpAudioPacket};
+use crate::rtp::{RtpAudioPacket, RtpHeader};
 use crate::rtsp_client::RTSPClient;
 use crate::sample_rate::SampleRate;
-use crate::serialization::{Serializable};
+use crate::serialization::Serializable;
 use crate::sync_controller::SyncController;
 use crate::timing_controller::TimingController;
 use crate::volume::Volume;
@@ -18,8 +18,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use beefeater::Beefeater;
+use log::{debug, error, info, trace};
 use rand::random;
-use log::{error, info, debug, trace};
 use tokio::net::UdpSocket;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
@@ -47,7 +47,7 @@ pub fn analyse_setup(setup_headers: Vec<(String, String)>) -> Result<(u16, u16, 
             ["server_port", port] => audio_port = port.parse()?,
             ["control_port", port] => ctrl_port = port.parse()?,
             ["timing_port", port] => time_port = port.parse()?,
-            _ => {},
+            _ => {}
         }
     }
 
@@ -129,8 +129,8 @@ impl Sane {
 
 fn format_ip_for_sdp(ip: IpAddr) -> String {
     match ip {
-        IpAddr::V4(ip) => format!("IN IP4 {}", ip.to_string()),
-        IpAddr::V6(ip) => format!("IN IP6 {}", ip.to_string()),
+        IpAddr::V4(ip) => format!("IN IP4 {}", ip),
+        IpAddr::V6(ip) => format!("IN IP6 {}", ip),
     }
 }
 
@@ -261,25 +261,7 @@ impl RaopClient {
             start_ts: Frames::new(0),
             first_ts: Frames::new(0),
             first_pkt: true,
-            // FIXME: https://github.com/rust-lang/rust/issues/49147
-            backlog: [
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            ],
+            backlog: [const { None }; 512],
         };
 
         let record_headers = rtsp_client.record(status.seq_number + 1, NtpTime::now().into_timestamp(params.codec.sample_rate())).await?;
@@ -341,7 +323,7 @@ impl RaopClient {
         self.codec.sample_rate()
     }
 
-    async fn flush(&self, mut status: &mut Status) -> Result<(), Box<dyn std::error::Error>> {
+    async fn flush(&self, status: &mut Status) -> Result<(), Box<dyn std::error::Error>> {
         let now = NtpTime::now();
         let now_ts = now.into_timestamp(self.codec.sample_rate());
 
@@ -358,7 +340,7 @@ impl RaopClient {
             status.head_ts = if status.start_ts > Frames::new(0) { status.start_ts } else { now_ts };
             status.first_ts = status.head_ts;
 
-            self.sync_controller.send_sync(&mut status, self.codec.sample_rate(), self.latency, true).await?;
+            self.sync_controller.send_sync(status, self.codec.sample_rate(), self.latency, true).await?;
 
             info!("restarting w/o pause n:{}, hts:{}", now, status.head_ts);
         } else {
@@ -372,7 +354,7 @@ impl RaopClient {
             // last head_ts shall be first + raopcl_latency - chunk_length
             status.head_ts = status.first_ts - self.codec.chunk_length();
 
-            self.sync_controller.send_sync(&mut status, self.codec.sample_rate(), self.latency, true).await?;
+            self.sync_controller.send_sync(status, self.codec.sample_rate(), self.latency, true).await?;
 
             info!("restarting w/ pause n:{}, hts:{} (re-send: {})", now, status.head_ts, chunks);
 
@@ -400,7 +382,7 @@ impl RaopClient {
                     entry.packet.timestamp = status.head_ts;
                     status.first_pkt = false;
 
-                    self._send_audio(&mut status, &entry.packet).await?;
+                    self._send_audio(status, &entry.packet).await?;
 
                     // then replace packets in backlog in case
                     let reindex = (status.seq_number % MAX_BACKLOG) as usize;
@@ -465,7 +447,7 @@ impl RaopClient {
         let mut status = self.status.lock().await;
         trace!("[send_chunk] - got status");
 
-        let encoded = self.codec.encode_chunk(&sample);
+        let encoded = self.codec.encode_chunk(sample);
         let encrypted = self.crypto.encrypt(encoded)?;
 
         let playtime = (status.head_ts + self.latency()) / self.codec.sample_rate();
@@ -502,9 +484,17 @@ impl RaopClient {
         if playtime.as_secs() % 10 == 0 && playtime.subsec_millis() < 8 {
             let sane = self.sane.lock().await;
             let retransmit = self.retransmit.load();
-            debug!("check n:{} p:{} ts:{} sn:{} retr:{} avail:{} send:{} select:{}",
-                now.millis(), playtime.as_secs_f32(), status.head_ts, status.seq_number,
-                retransmit, sane.audio.avail, sane.audio.send, sane.audio.select);
+            debug!(
+                "check n:{} p:{} ts:{} sn:{} retr:{} avail:{} send:{} select:{}",
+                now.millis(),
+                playtime.as_secs_f32(),
+                status.head_ts,
+                status.seq_number,
+                retransmit,
+                sane.audio.avail,
+                sane.audio.send,
+                sane.audio.select
+            );
         }
 
         trace!("[send_chunk] - dropping status");
@@ -522,8 +512,8 @@ impl RaopClient {
     }
 
     pub async fn set_meta_data(&self, meta_data: MetaDataItem) -> Result<(), Box<dyn std::error::Error>> {
-        let ts = (*self.status.lock().await).head_ts;
-        (*self.rtsp_client.lock().await).set_meta_data(ts, meta_data).await?;
+        let ts = self.status.lock().await.head_ts;
+        self.rtsp_client.lock().await.set_meta_data(ts, meta_data).await?;
         Ok(())
     }
 
@@ -551,7 +541,9 @@ impl RaopClient {
         connect has returned in case of multi-threaded application
         */
         // FIXME: if self.rtp_ports.audio.fd == -1  { return Ok(false); }
-        if status.state != RaopState::Streaming { return Ok(false); }
+        if status.state != RaopState::Streaming {
+            return Ok(false);
+        }
 
         let n = {
             let socket = self.rtp_audio.lock().await;

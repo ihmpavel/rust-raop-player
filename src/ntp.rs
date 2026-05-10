@@ -1,9 +1,9 @@
+use std::fmt::{self, Display, Formatter};
 use std::io::{self, Read, Write};
-use std::time::{Duration, SystemTime};
-use std::fmt::{self, Formatter, Display};
 use std::ops::Sub;
+use std::time::{Duration, SystemTime};
 
-use byteorder::{BE, ReadBytesExt, WriteBytesExt};
+use byteorder::{ReadBytesExt, WriteBytesExt, BE};
 
 use crate::frames::Frames;
 use crate::sample_rate::SampleRate;
@@ -60,12 +60,12 @@ impl Sub for NtpTime {
         }
 
         let (secs, fraction) = if self.fraction < other.fraction {
-            (self.seconds - other.seconds - 1, std::u32::MAX - other.fraction + self.fraction)
+            (self.seconds - other.seconds - 1, u32::MAX - other.fraction + self.fraction)
         } else {
             (self.seconds - other.seconds, self.fraction - other.fraction)
         };
 
-        let nanos = ((fraction as f64) / (std::u32::MAX as f64)) * 1_000_000_000f64;
+        let nanos = ((fraction as f64) / (u32::MAX as f64)) * 1_000_000_000f64;
 
         Duration::new(secs as u64, nanos as u32)
     }
